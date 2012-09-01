@@ -17,7 +17,7 @@ class BootstrapSymlinkLessCommand extends ContainerAwareCommand
 {
     public static $mopaBootstrapBundleName = "mopa/bootstrap-bundle";
     public static $twitterBootstrapName = "twitter/bootstrap";
-    public static $fontAwesomeName = "FortAwesome/Font-Awesome"
+    public static $fontAwesomeName = "FortAwesome/Font-Awesome";
 
     protected function configure()
     {
