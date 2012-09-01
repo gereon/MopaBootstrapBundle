@@ -1,6 +1,6 @@
 <?php
 /**
- * Script for composer, to symlink bootstrap lib into Bundle
+ * Script for composer, to symlink bootstrap lib into Bundle + Font-Awesome (only for less)
  *
  * Maybe nice to convert this to a command and then reuse command in here.
  */
@@ -29,11 +29,27 @@ class ScriptHandler
             $options
         );
 
+        $optionsFontAwesome = array(
+                'targetSuffix' => DIRECTORY_SEPARATOR . "Resources" . DIRECTORY_SEPARATOR . "Font-Awesome",
+                'sourcePrefix' => '..' . DIRECTORY_SEPARATOR
+            );
+        list($symlinkTargetFontAwesome, $symlinkNameFontAwesome) = $cmanager->getSymlinkFromComposer(
+            BootstrapSymlinkLessCommand::$mopaBootstrapBundleName,
+            BootstrapSymlinkLessCommand::$fontAwesomeName,
+            $optionsFontAwesome
+        );
+
         $IO->write("Checking Symlink", FALSE);
         if (false === BootstrapSymlinkLessCommand::checkSymlink($symlinkTarget, $symlinkName, true)) {
             $IO->write("Creating Symlink: " . $symlinkName, FALSE);
             BootstrapSymlinkLessCommand::createSymlink($symlinkTarget, $symlinkName);
         }
+
+        if (false === BootstrapSymlinkLessCommand::checkSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome, true)) {
+            $IO->write("Creating Symlink FontAwesome: " . $symlinkNameFontAwesome, FALSE);
+            BootstrapSymlinkLessCommand::createSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome);
+        }
+
         $IO->write(" ... <info>OK</info>");
     }
 

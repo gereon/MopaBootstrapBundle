@@ -11,12 +11,13 @@ use Mopa\Bridge\Composer\Adapter\ComposerAdapter;
 use Mopa\Bridge\Composer\Util\ComposerPathFinder;
 
 /**
- * Command to check and create bootstrap symlink into MopaBootstrapBundle
+ * Command to check and create bootstrap symlink + FontAwesome (without manual entry) into MopaBootstrapBundle
  */
 class BootstrapSymlinkLessCommand extends ContainerAwareCommand
 {
     public static $mopaBootstrapBundleName = "mopa/bootstrap-bundle";
     public static $twitterBootstrapName = "twitter/bootstrap";
+    public static $fontAwesomeName = "FortAwesome/Font-Awesome"
 
     protected function configure()
     {
@@ -62,6 +63,17 @@ EOT
                 self::$twitterBootstrapName,
                 $options
             );
+
+            $optionsFontAwesome = array(
+                    'targetSuffix' => DIRECTORY_SEPARATOR . "Resources" . DIRECTORY_SEPARATOR . "Font-Awesome",
+                    'sourcePrefix' => '..' . DIRECTORY_SEPARATOR
+                );
+            list($symlinkTargetFontAwesome, $symlinkNameFontAwesome) = $cmanager->getSymlinkFromComposer(
+                self::$mopaBootstrapBundleName,
+                self::$fontAwesomeName,
+                $optionsFontAwesome
+            );
+
         } else {
             $this->output->writeln("<error>Could not find composer and manual option not secified!</error>");
 
@@ -75,6 +87,14 @@ EOT
             $this->output->write("for Target: " . $symlinkTarget);
             self::createSymlink($symlinkTarget, $symlinkName);
         }
+
+        if (false === self::checkSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome, true)) {
+            $this->output->writeln(" ... <comment>FontAwesome not existing</comment>");
+            $this->output->writeln("Creating Symlink FontAwesome: " . $symlinkNameFontAwesome);
+            $this->output->write("for Target: " . $symlinkTargetFontAwesome);
+            self::createSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome);
+        }
+
         $this->output->writeln(" ... <info>OK</info>");
     }
 
