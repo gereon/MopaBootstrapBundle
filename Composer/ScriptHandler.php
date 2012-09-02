@@ -39,12 +39,14 @@ class ScriptHandler
             $optionsFontAwesome
         );
 
-        $IO->write("Checking Symlink", FALSE);
+        $IO->write("Checking Symlink Bootstrap. ", FALSE);
         if (false === BootstrapSymlinkLessCommand::checkSymlink($symlinkTarget, $symlinkName, true)) {
-            $IO->write("Creating Symlink: " . $symlinkName, FALSE);
+            $IO->write("Creating Symlink Bootstrap: " . $symlinkName, FALSE);
             BootstrapSymlinkLessCommand::createSymlink($symlinkTarget, $symlinkName);
         }
+        $IO->write(" ... <info>OK</info>");
 
+        $IO->write("Checking Symlink FontAwesome. ", FALSE);
         if (false === BootstrapSymlinkLessCommand::checkSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome, true)) {
             $IO->write("Creating Symlink FontAwesome: " . $symlinkNameFontAwesome, FALSE);
             BootstrapSymlinkLessCommand::createSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome);

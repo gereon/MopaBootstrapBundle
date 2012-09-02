@@ -84,14 +84,14 @@ EOT
         if (false === self::checkSymlink($symlinkTarget, $symlinkName, true)) {
             $this->output->writeln(" ... <comment>not existing</comment>");
             $this->output->writeln("Creating Symlink: " . $symlinkName);
-            $this->output->write("for Target: " . $symlinkTarget);
+            $this->output->writeln("for Target: " . $symlinkTarget);
             self::createSymlink($symlinkTarget, $symlinkName);
         }
 
         if (false === self::checkSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome, true)) {
             $this->output->writeln(" ... <comment>FontAwesome not existing</comment>");
             $this->output->writeln("Creating Symlink FontAwesome: " . $symlinkNameFontAwesome);
-            $this->output->write("for Target: " . $symlinkTargetFontAwesome);
+            $this->output->writeln("for Target: " . $symlinkTargetFontAwesome);
             self::createSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome);
         }
 
