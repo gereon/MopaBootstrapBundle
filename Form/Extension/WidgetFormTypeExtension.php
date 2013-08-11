@@ -9,6 +9,12 @@ use Symfony\Component\Form\Exception\CreationException;
 
 class WidgetFormTypeExtension extends AbstractTypeExtension
 {
+    protected $options;
+
+    public function __construct(array $options)
+    {
+        $this->options = $options;
+    }
 
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
@@ -36,8 +42,10 @@ class WidgetFormTypeExtension extends AbstractTypeExtension
         $view->vars['widget_prefix'] = $options['widget_prefix'];
         $view->vars['widget_suffix'] = $options['widget_suffix'];
         $view->vars['widget_type'] = $options['widget_type'];
+        $view->vars['widget_items_attr'] = $options['widget_items_attr'];
         $view->vars['widget_control_group_attr'] = $options['widget_control_group_attr'];
         $view->vars['widget_controls_attr'] = $options['widget_controls_attr'];
+        $view->vars['widget_checkbox_label'] = $options['widget_checkbox_label'];
 
     }
     public function setDefaultOptions(OptionsResolverInterface $resolver)
@@ -54,14 +62,21 @@ class WidgetFormTypeExtension extends AbstractTypeExtension
                 'widget_prefix' => null,
                 'widget_suffix' => null,
                 'widget_type' => '',
+                'widget_items_attr' => array(),
                 'widget_control_group_attr' => array(),
                 'widget_controls_attr' => array(),
+                'widget_checkbox_label' => $this->options['checkbox_label'],
             )
         );
         $resolver->setAllowedValues(array(
                 'widget_type' => array(
                     'inline',
                     '',
+                ),
+                'widget_checkbox_label' => array(
+                    'label',
+                    'widget',
+                    'both',
                 )
             )
         );

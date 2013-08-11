@@ -47,7 +47,7 @@ Installation
     {
         "require": {
             "mopa/bootstrap-bundle": "dev-master",
-            "twitter/bootstrap": "dev-master"
+            "twbs/bootstrap": "dev-master"
         }
     }
     ```
@@ -58,7 +58,7 @@ Installation
     {
         "require": {
             "mopa/bootstrap-bundle": "dev-master",
-            "twitter/bootstrap": "dev-master",
+            "twbs/bootstrap": "dev-master",
             "knplabs/knp-paginator-bundle": "dev-master",
             "knplabs/knp-menu-bundle": "dev-master",
             "craue/formflow-bundle": "dev-master"
@@ -149,7 +149,7 @@ Installation
        {
            "require": {
                "mopa/bootstrap-bundle": "dev-master",
-               "twitter/bootstrap": "dev-master",
+               "twbs/bootstrap": "dev-master",
                "knplabs/knp-paginator-bundle": "dev-master",
                "knplabs/knp-menu-bundle": "dev-master",
                "craue/formflow-bundle": "dev-master",
@@ -216,5 +216,6 @@ Installation
             show_legend: false # default is true
             show_child_legend: false # default is true
             error_type: block # or inline which is default
+            checkbox_label: 'widget' # default is both (label|widget|both)
     ```
 

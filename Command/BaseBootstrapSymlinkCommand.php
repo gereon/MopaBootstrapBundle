@@ -2,44 +2,37 @@
 
 namespace Mopa\Bundle\BootstrapBundle\Command;
 
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Mopa\Bridge\Composer\Adapter\ComposerAdapter;
+use Mopa\Bridge\Composer\Util\ComposerPathFinder;
+
 /**
- * Command to check and create bootstrap symlink + FontAwesome (without manual entry) into MopaBootstrapBundle
+ * Command to check and create bootstrap symlink into MopaBootstrapBundle
  */
-class BootstrapSymlinkLessCommand extends BaseBootstrapSymlinkCommand
+abstract class BaseBootstrapSymlinkCommand extends ContainerAwareCommand
 {
     public static $mopaBootstrapBundleName = "mopa/bootstrap-bundle";
-    public static $twitterBootstrapName = "twbs/bootstrap";
-    public static $fontAwesomeName = "FortAwesome/Font-Awesome";
+    public static $targetSuffix = 'bootstrap';
+    public static $pathName = 'TwitterBootstrap';
 
-    
-    
-    protected function getTwitterBootstrapName(){
-        return self::$twitterBootstrapName;
-    }
-    
     protected function configure()
     {
-        parent::configure();
-
         $this
-            ->setName('mopa:bootstrap:symlink:less')
-            ->setHelp(<<<EOT
-The <info>mopa:bootstrap:symlink:less</info> command helps you checking and symlinking/mirroring the twitters/bootstrap library.
-
-By default, the command uses composer to retrieve the paths of MopaBootstrapBundle and twbs/bootstrap in your vendors.
-
-If you want to control the paths yourself specify the paths manually:
-
-php app/console mopa:bootstrap:symlink:less <comment>--manual</comment> <pathToTwitterBootstrap> <pathToMopaBootstrapBundle>
-
-Defaults if installed by composer would be :
-
-pathToTwitterBootstrap:    ../../../../../../../vendor/twitter/bootstrap
-pathToMopaBootstrapBundle: vendor/mopa/bootstrap-bundle/Mopa/Bundle/BootstrapBundle/Resources/bootstrap
-
-EOT
-            );
+            ->setDescription("Check and if possible install symlink to " . static::$targetSuffix)
+            ->addArgument('pathTo' . static::$pathName, InputArgument::OPTIONAL, 'Where is twitters/bootstrap located?')
+            ->addArgument('pathToMopaBootstrapBundle', InputArgument::OPTIONAL, 'Where is MopaBootstrapBundle located?')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force rewrite of existing symlink if possible!')
+            ->addOption('manual', 'm', InputOption::VALUE_NONE, 'If set please specify pathTo' . static::$pathName . ', and pathToMopaBootstrapBundle')
+            ->addOption('no-symlink', null, InputOption::VALUE_NONE, 'Use hard copy/mirroring instead of symlink. This is required for Windows without administrator privileges.')
+        ;
     }
+
+    abstract protected function getTwitterBootstrapName();
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -50,44 +43,42 @@ EOT
         } elseif (false !== $composer = ComposerAdapter::getComposer($input, $output)) {
             $cmanager = new ComposerPathFinder($composer);
             $options = array(
-                    'targetSuffix' => DIRECTORY_SEPARATOR . "Resources" . DIRECTORY_SEPARATOR . "bootstrap",
+                    'targetSuffix' => DIRECTORY_SEPARATOR . "Resources" . DIRECTORY_SEPARATOR . static::$targetSuffix,
                     'sourcePrefix' => '..' . DIRECTORY_SEPARATOR
                 );
             list($symlinkTarget, $symlinkName) = $cmanager->getSymlinkFromComposer(
                 self::$mopaBootstrapBundleName,
-                self::$twitterBootstrapName,
+                $this->getTwitterBootstrapName(),
                 $options
             );
-
-            $optionsFontAwesome = array(
-                    'targetSuffix' => DIRECTORY_SEPARATOR . "Resources" . DIRECTORY_SEPARATOR . "Font-Awesome",
-                    'sourcePrefix' => '..' . DIRECTORY_SEPARATOR
-                );
-            list($symlinkTargetFontAwesome, $symlinkNameFontAwesome) = $cmanager->getSymlinkFromComposer(
-                self::$mopaBootstrapBundleName,
-                self::$fontAwesomeName,
-                $optionsFontAwesome
-            );
-
         } else {
-            $this->output->writeln("<error>Could not find composer and manual option not secified!</error>");
+            $this->output->writeln("<error>Could not find composer and manual option not specified!</error>");
 
             return;
         }
 
-        $this->output->write("Checking Symlink");
-        if (false === self::checkSymlink($symlinkTarget, $symlinkName, true)) {
-            $this->output->writeln(" ... <comment>not existing</comment>");
-            $this->output->writeln("Creating Symlink: " . $symlinkName);
-            $this->output->writeln("for Target: " . $symlinkTarget);
-            self::createSymlink($symlinkTarget, $symlinkName);
-        }
+        // Automatically detect if on Win XP where symlink will allways fail
+        if ($input->getOption('no-symlink') or PHP_OS=="WINNT")  {
+            $this->output->write("Checking destination");
 
-        if (false === self::checkSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome, true)) {
-            $this->output->writeln(" ... <comment>FontAwesome not existing</comment>");
-            $this->output->writeln("Creating Symlink FontAwesome: " . $symlinkNameFontAwesome);
-            $this->output->writeln("for Target: " . $symlinkTargetFontAwesome);
-            self::createSymlink($symlinkTargetFontAwesome, $symlinkNameFontAwesome);
+            if (true === self::checkSymlink($symlinkTarget, $symlinkName)) {
+                $this->output->writeln(" ... <comment>symlink already existing</comment>");
+            } else {
+                $this->output->writeln(" ... <comment>not existing</comment>");
+                $this->output->writeln("Mirroring from: " . $symlinkName);
+                $this->output->write("for Target: " . $symlinkTarget);
+
+                $filesystem = new Filesystem();
+                $filesystem->mirror($symlinkTarget, $symlinkName, null, array('copy_on_windows' => true, 'delete' => true, 'override' => true));
+            }
+        } else {
+            $this->output->write("Checking Symlink");
+            if (false === self::checkSymlink($symlinkTarget, $symlinkName, true)) {
+                $this->output->writeln(" ... <comment>not existing</comment>");
+                $this->output->writeln("Creating Symlink: " . $symlinkName);
+                $this->output->write("for Target: " . $symlinkTarget);
+                self::createSymlink($symlinkTarget, $symlinkName);
+            }
         }
 
         $this->output->writeln(" ... <info>OK</info>");
@@ -95,7 +86,7 @@ EOT
 
     protected function getBootstrapPathsfromUser()
     {
-            $symlinkTarget = $this->input->getArgument('pathToTwitterBootstrap');
+            $symlinkTarget = $this->input->getArgument('pathTo' . static::$pathName);
             $symlinkName = $this->input->getArgument('pathToMopaBootstrapBundle');
             if (empty($symlinkName)) {
                 throw new \Exception("pathToMopaBootstrapBundle not specified");
@@ -103,7 +94,7 @@ EOT
                 throw new \Exception("pathToMopaBootstrapBundle: " . dirname($symlinkName) . " does not exist");
             }
             if (empty($symlinkTarget)) {
-                throw new \Exception("pathToTwitterBootstrap not specified");
+                throw new \Exception(static::$pathName . " not specified");
             } else {
                 if (substr($symlinkTarget, 0, 1) == "/") {
                     $this->output->writeln("<comment>Try avoiding absolute paths, for portability!</comment>");
@@ -115,10 +106,10 @@ EOT
                         $symlinkName . DIRECTORY_SEPARATOR .
                         ".." . DIRECTORY_SEPARATOR .
                         $symlinkTarget;
-                    $symlinkTarget = self::get_absolute_path($resolve);
+                    $symlinkTarget = self::getAbsolutePath($resolve);
                 }
                 if (!is_dir($symlinkTarget)) {
-                    throw new \Exception("pathToTwitterBootstrap would resolve to: " . $symlinkTarget . "\n and this is not reachable from \npathToMopaBootstrapBundle: " . dirname($symlinkName));
+                    throw new \Exception(static::$pathName . " would resolve to: " . $symlinkTarget . "\n and this is not reachable from \npathToMopaBootstrapBundle: " . dirname($symlinkName));
                 }
             }
             $dialog = $this->getHelperSet()->get('dialog');
@@ -141,7 +132,7 @@ EOF
             return array($symlinkTarget, $symlinkName);
     }
 
-    protected static function get_absolute_path($path)
+    protected static function getAbsolutePath($path)
     {
         $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
         $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
@@ -171,7 +162,7 @@ EOF
      */
     public static function checkSymlink($symlinkTarget, $symlinkName, $forceSymlink = false)
     {
-        if (!$forceSymlink and file_exists($symlinkName) && !is_link($symlinkName)) {
+        if ($forceSymlink and file_exists($symlinkName) && !is_link($symlinkName)) {
             $type = filetype($symlinkName);
             if ($type != "link") {
                 throw new \Exception($symlinkName . " exists and is no link!");
